@@ -157,12 +157,22 @@ def upload():
             "STATUS"
         ]
 
+        # Spremi rezultat
         result_file = os.path.join(RESULT_FOLDER, f"rezultat_{uid}.xlsx")
         rezultat.to_excel(result_file, index=False)
 
-        return send_file(result_file, as_attachment=True)
+        # Render stranice s linkom za download
+        return render_template("rezultat.html", filename=f"rezultat_{uid}.xlsx")
 
     return render_template("index.html")
+
+
+# ==============================
+# DOWNLOAD RUTA
+# ==============================
+@app.route("/download/<filename>")
+def download_file(filename):
+    return send_file(os.path.join(RESULT_FOLDER, filename), as_attachment=True)
 
 
 # ==============================

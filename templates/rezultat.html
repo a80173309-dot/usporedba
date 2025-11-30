@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+    <meta charset="UTF-8">
+    <title>Rezultat usporedbe</title>
+</head>
+<body>
+    <h1>Usporedba gotova!</h1>
+    <p>Kliknite na gumb ispod da preuzmete Excel datoteku:</p>
+    <a href="{{ url_for('download_file', filename=filename) }}" download>
+        <button>Preuzmi Excel</button>
+    </a>
+    <br><br>
+    <a href="{{ url_for('upload') }}">Nazad na upload</a>
+</body>
+</html>
+
