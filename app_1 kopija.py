@@ -7,7 +7,7 @@ app = Flask(__name__)
 app.secret_key = "tajni_kljuc_123"
 
 # ==============================
-# KORISNICI
+# KORISNICI (MOŽEŠ DODAVATI JOŠ)
 # ==============================
 korisnici = {
     "admin": "admin123",
@@ -22,16 +22,17 @@ os.makedirs(RESULT_FOLDER, exist_ok=True)
 
 
 # =====================================================
-# FLEKSIBILNO UČITAVANJE TABLICE
+# FLEKSIBILNO UČITAVANJE TABLICE (RAZLIČITI NAZIVI KOLONA)
 # =====================================================
 def ucitaj_i_pripremi(file_path):
     df = pd.read_excel(file_path)
 
     # Normalizacija naziva stupaca
-    df.columns = [c.strip().lower().replace(".", "") for c in df.columns]
+    df.columns = [c.strip().lower() for c in df.columns]
 
+    # Moguća imena stupaca
     mapiranja = {
-        "redni broj": ["redni broj", "redbr", "redni br", "rb", "rbr"],
+        "redni broj": ["redni broj", "rb", "rbr"],
         "ident": ["ident", "id", "sifra", "šifra"],
         "naziv": ["naziv", "naziv artikla", "artikal", "ime"],
         "kolicina": ["kolicina", "količina", "kol", "kom", "qty", "quantity"]
@@ -48,18 +49,15 @@ def ucitaj_i_pripremi(file_path):
         if standard not in stvarna_imena:
             raise ValueError(f"Nedostaje stupac za: {standard}")
 
-    df = df[
-        [
-            stvarna_imena["redni broj"],
-            stvarna_imena["ident"],
-            stvarna_imena["naziv"],
-            stvarna_imena["kolicina"]
-        ]
-    ]
+    df = df[[ 
+        stvarna_imena["redni broj"],
+        stvarna_imena["ident"],
+        stvarna_imena["naziv"],
+        stvarna_imena["kolicina"]
+    ]]
 
-    df.columns = ["redni_broj", "ident", "naziv", "kolicina"]
+    df.columns = ["redni broj", "ident", "naziv", "kolicina"]
 
-    df["redni_broj"] = df["redni_broj"].astype(str).str.strip()
     df["ident"] = df["ident"].astype(str).str.strip()
     df["naziv"] = df["naziv"].astype(str).str.strip()
     df["kolicina"] = pd.to_numeric(df["kolicina"], errors="coerce").fillna(0)
@@ -107,9 +105,10 @@ def upload():
         prijenosnica.save(file1_path)
         checklista.save(file2_path)
 
-        df1 = ucitaj_i_pripremi(file1_path)   # PRIJENOSNICA
-        df2 = ucitaj_i_pripremi(file2_path)   # CHECKLISTA
+        df1 = ucitaj_i_pripremi(file1_path)
+        df2 = ucitaj_i_pripremi(file2_path)
 
+        # SPAJANJE PO IDENT + NAZIV
         rez = pd.merge(
             df1,
             df2,
@@ -140,25 +139,16 @@ def upload():
         rez["STATUS"] = status
         rez["RAZLIKA"] = rez["kolicina_prijenos"] - rez["kolicina_check"]
 
-        # ==============================
-        # ✅ DODAN REDNI BROJ IZ PRIJENOSNICE
-        # ==============================
-        rez["REDNI BROJ"] = rez["redni_broj_prijenos"]
-
-        rezultat = rez[
-            [
-                "REDNI BROJ",
-                "ident",
-                "naziv",
-                "kolicina_prijenos",
-                "kolicina_check",
-                "RAZLIKA",
-                "STATUS"
-            ]
-        ]
+        rezultat = rez[[
+            "ident",
+            "naziv",
+            "kolicina_prijenos",
+            "kolicina_check",
+            "RAZLIKA",
+            "STATUS"
+        ]]
 
         rezultat.columns = [
-            "REDNI BROJ",
             "IDENT",
             "NAZIV",
             "KOLIČINA PRIJENOSNICA",
@@ -167,16 +157,18 @@ def upload():
             "STATUS"
         ]
 
+        # Spremi rezultat
         result_file = os.path.join(RESULT_FOLDER, f"rezultat_{uid}.xlsx")
         rezultat.to_excel(result_file, index=False)
 
+        # Render stranice s linkom za download
         return render_template("rezultat.html", filename=f"rezultat_{uid}.xlsx")
 
     return render_template("index.html")
 
 
 # ==============================
-# DOWNLOAD
+# DOWNLOAD RUTA
 # ==============================
 @app.route("/download/<filename>")
 def download_file(filename):
@@ -193,7 +185,7 @@ def logout():
 
 
 # ==============================
-# POKRETANJE
+# POKRETANJE NA PORTU 8000
 # ==============================
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
